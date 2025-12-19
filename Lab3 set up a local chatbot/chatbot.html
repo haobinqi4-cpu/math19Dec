@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Chatbot - HKBU Gen AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            height: calc(100vh - 40px);
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .main-chat {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        select, input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .file-upload {
+            margin-top: 10px;
+        }
+
+        .file-item {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #ddd;
+        }
+
+        .file-item-name {
+            font-size: 13px;
+            color: #333;
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .file-item-remove {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .file-item-remove:hover {
+            background: #c82333;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-block {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .message-user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .message-user .message-avatar {
+            background: #667eea;
+        }
+
+        .message-assistant .message-avatar {
+            background: #28a745;
+        }
+
+        .message-system .message-avatar {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .message-user .message-content {
+            background: #667eea;
+            color: white;
+        }
+
+        .message-assistant .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .message-system .message-content {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 10px;
+            color: #667eea;
+            font-style: italic;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .history-item {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            transition: all 0.2s;
+        }
+
+        .history-item:hover {
+            border-color: #667eea;
+            transform: translateX(4px);
+        }
+
+        .history-item-title {
+            font-weight: 500;
+            font-size: 13px;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .history-item-meta {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .model-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #e7f3ff;
+            color: #0066cc;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-right: 4px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+
+        code {
+            font-family: 'Courier New', monospace;
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+
+        @media (max-width: 968px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+            }
+            
+            .sidebar {
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div>
+                <h1>🤖 Local Chatbot</h1>
+                <p style="color: #999; font-size: 13px;">HKBU Gen AI Platform</p>
+            </div>
+
+            <div class="section">
+                <h2>Model Selection</h2>
+                <label for="model-select">Choose LLM:</label>
+                <select id="model-select">
+                    <option value="">Loading models...</option>
+                </select>
+            </div>
+
+            <div class="section">
+                <h2>System Prompt</h2>
+                <label for="system-prompt">Define AI role and behavior:</label>
+                <textarea id="system-prompt" placeholder="Example: You are a helpful assistant specialized in data analysis and Python programming. Be concise, accurate, and provide code examples when relevant.">You are a helpful, knowledgeable assistant. You provide clear, accurate, and thoughtful responses. When asked about code or technical topics, you explain concepts clearly and provide well-commented examples.</textarea>
+            </div>
+
+            <div class="section">
+                <h2>File Context</h2>
+                <label>Upload or paste file content:</label>
+                <input type="text" id="file-name-input" placeholder="File name (e.g., data.csv)" style="margin-bottom: 8px;">
+                <textarea id="file-content-input" placeholder="Paste file content here..." rows="4"></textarea>
+                <button class="btn btn-primary btn-block" onclick="addFile()">📎 Add File</button>
+                <div id="files-list"></div>
+            </div>
+
+            <div class="section">
+                <h2>Chat History</h2>
+                <div class="button-group">
+                    <button class="btn btn-success" onclick="saveChat()" style="flex: 1;">💾 Save</button>
+                    <button class="btn btn-secondary" onclick="loadChatList()">📂 Load</button>
+                    <button class="btn btn-secondary" onclick="clearChat()">🗑️ Clear</button>
+                </div>
+                <div id="history-list" style="margin-top: 10px; max-height: 200px; overflow-y: auto;"></div>
+            </div>
+        </div>
+
+        <div class="main-chat">
+            <div class="chat-messages" id="chat-messages">
+                <div class="message message-system">
+                    <div class="message-avatar">ℹ️</div>
+                    <div class="message-content">
+                        Welcome! Select a model, customize the system prompt, optionally add file context, and start chatting.
+                    </div>
+                </div>
+            </div>
+            <div class="loading" id="loading">🤔 Thinking...</div>
+            <div class="chat-input-container">
+                <input type="text" id="chat-input" class="chat-input" placeholder="Type your message..." onkeypress="if(event.key==='Enter') sendMessage()">
+                <button class="btn btn-primary" onclick="sendMessage()">Send 📤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let messages = [];
+        let files = [];
+        let currentModel = '';
+
+        // Load models on startup
+        async function loadModels() {
+            try {
+                const response = await fetch('/api/models');
+                const data = await response.json();
+                const select = document.getElementById('model-select');
+                select.innerHTML = data.models.map(model => 
+                    `<option value="${model.id}">${model.name} (${model.provider})</option>`
+                ).join('');
+                currentModel = data.models[0].id;
+            } catch (error) {
+                console.error('Failed to load models:', error);
+                alert('Failed to load models. Please check if the server is running.');
+            }
+        }
+
+        // Add file to context
+        function addFile() {
+            const nameInput = document.getElementById('file-name-input');
+            const contentInput = document.getElementById('file-content-input');
+            
+            const name = nameInput.value.trim();
+            const content = contentInput.value.trim();
+            
+            if (!name || !content) {
+                alert('Please provide both file name and content');
+                return;
+            }
+            
+            files.push({ name, content });
+            nameInput.value = '';
+            contentInput.value = '';
+            renderFiles();
+        }
+
+        // Remove file from context
+        function removeFile(index) {
+            files.splice(index, 1);
+            renderFiles();
+        }
+
+        // Render files list
+        function renderFiles() {
+            const container = document.getElementById('files-list');
+            if (files.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            container.innerHTML = files.map((file, index) => `
+                <div class="file-item">
+                    <span class="file-item-name">📄 ${file.name}</span>
+                    <button class="file-item-remove" onclick="removeFile(${index})">✕</button>
+                </div>
+            `).join('');
+        }
+
+        // Build context message with files
+        function buildContextMessage() {
+            if (files.length === 0) return null;
+            
+            let context = "Context files:\n\n";
+            files.forEach(file => {
+                context += `--- File: ${file.name} ---\n${file.content}\n\n`;
+            });
+            return context;
+        }
+
+        // Send message
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const userMessage = input.value.trim();
+            
+            if (!userMessage) return;
+            
+            input.value = '';
+            currentModel = document.getElementById('model-select').value;
+            const systemPrompt = document.getElementById('system-prompt').value;
+            
+            // Add user message to chat
+            addMessage('user', userMessage);
+            
+            // Prepare messages array
+            const apiMessages = [
+                { role: 'system', content: systemPrompt }
+            ];
+            
+            // Add file context if available
+            const contextMessage = buildContextMessage();
+            if (contextMessage) {
+                apiMessages.push({ role: 'system', content: contextMessage });
+            }
+            
+            // Add conversation history
+            apiMessages.push(...messages);
+            
+            // Show loading
+            document.getElementById('loading').classList.add('active');
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: currentModel,
+                        messages: apiMessages,
+                        stream: false,
+                        max_tokens: 2000,
+                        temperature: 0.7
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    let errorMsg = data.error;
+                    // Provide helpful error messages
+                    if (errorMsg.includes('Invalid API key') || errorMsg.includes('authentication')) {
+                        errorMsg = '❌ API Authentication Error: Your API key may be invalid, expired, or lack permissions for chat completions.\n\n' +
+                                  'Please check:\n' +
+                                  '1. Your API key is correct in ../Data/GenAIkey.md\n' +
+                                  '2. Your API key has not expired\n' +
+                                  '3. You have permissions for chat completions (model listing works, but chat may require different permissions)\n\n' +
+                                  'Run: python3 test_api.py to diagnose';
+                    }
+                    addMessage('system', `Error: ${errorMsg}`);
+                } else {
+                    const assistantMessage = data.choices[0].message.content;
+                    addMessage('assistant', assistantMessage);
+                }
+            } catch (error) {
+                addMessage('system', `Error: ${error.message}`);
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+            }
+        }
+
+        // Add message to chat
+        function addMessage(role, content) {
+            messages.push({ role, content });
+            
+            const container = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message message-${role}`;
+            
+            const avatar = role === 'user' ? '👤' : role === 'assistant' ? '🤖' : 'ℹ️';
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-content">${formatMessage(content)}</div>
+            `;
+            
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Format message content
+        function formatMessage(content) {
+            // Simple markdown-like formatting
+            let formatted = content
+                .replace(/```(\w+)?\n([\s\S]+?)```/g, '<pre><code>$2</code></pre>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/\n/g, '<br>');
+            return formatted;
+        }
+
+        // Clear chat
+        function clearChat() {
+            if (confirm('Clear current chat?')) {
+                messages = [];
+                document.getElementById('chat-messages').innerHTML = `
+                    <div class="message message-system">
+                        <div class="message-avatar">ℹ️</div>
+                        <div class="message-content">Chat cleared. Start a new conversation!</div>
+                    </div>
+                `;
+            }
+        }
+
+        // Save chat
+        async function saveChat() {
+            const sessionName = prompt('Enter a name for this chat session:', `chat_${new Date().toISOString().slice(0,10)}`);
+            if (!sessionName) return;
+            
+            try {
+                const response = await fetch('/api/chat/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        session_name: sessionName,
+                        messages: messages,
+                        model: currentModel,
+                        system_prompt: document.getElementById('system-prompt').value,
+                        files: files
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert('Chat saved successfully!');
+                    loadChatList();
+                }
+            } catch (error) {
+                alert('Failed to save chat: ' + error.message);
+            }
+        }
+
+        // Load chat list
+        async function loadChatList() {
+            try {
+                const response = await fetch('/api/chat/list');
+                const data = await response.json();
+                
+                const container = document.getElementById('history-list');
+                if (data.chats.length === 0) {
+                    container.innerHTML = '<p style="color: #999; font-size: 12px; padding: 10px;">No saved chats</p>';
+                    return;
+                }
+                
+                container.innerHTML = data.chats.map(chat => `
+                    <div class="history-item" onclick="loadChat('${chat.filename}')">
+                        <div class="history-item-title">${chat.session_name}</div>
+                        <div class="history-item-meta">
+                            <span class="model-badge">${chat.model}</span>
+                            ${chat.message_count} messages
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to load chat list:', error);
+            }
+        }
+
+        // Load specific chat
+        async function loadChat(filename) {
+            try {
+                const response = await fetch(`/api/chat/load/${filename}`);
+                const data = await response.json();
+                
+                // Clear current chat
+                messages = [];
+                files = data.files || [];
+                document.getElementById('chat-messages').innerHTML = '';
+                
+                // Set model and system prompt
+                document.getElementById('model-select').value = data.model;
+                document.getElementById('system-prompt').value = data.system_prompt;
+                currentModel = data.model;
+                
+                // Restore files
+                renderFiles();
+                
+                // Restore messages
+                data.messages.forEach(msg => {
+                    addMessage(msg.role, msg.content);
+                });
+                
+                alert('Chat loaded successfully!');
+            } catch (error) {
+                alert('Failed to load chat: ' + error.message);
+            }
+        }
+
+        // Initialize
+        loadModels();
+        loadChatList();
+    </script>
+</body>
+</html>
